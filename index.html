@@ -64,7 +64,8 @@
     <div class="grid">
       <section class="panel videoStage" id="stage">
         <div class="badge" id="meta">FPS: — • Size: —</div>
-        <div class="badge topRight" id="conn">URL: not set</div>
+        <!-- Gjør URL-badge klikkbar for enkel testing -->
+        <a id="conn" class="badge topRight" target="_blank" rel="noopener noreferrer">URL: not set</a>
         <img id="stream" alt="Camera stream" referrerpolicy="no-referrer" />
       </section>
 
@@ -74,7 +75,7 @@
           <input
             id="inpUrl"
             type="text"
-            placeholder="https://<your-ngrok>.ngrok-free.dev/?action=stream"
+            placeholder="Paste your ngrok HTTPS URL here (root or full path)"
             style="flex:1; min-width: 200px;"
             value="https://unfudged-controllably-leona.ngrok-free.dev/?action=stream" />
           <button id="btnSave" class="primary">Save</button>
@@ -93,9 +94,9 @@
     <section class="panel">
       <h3 style="margin:6px 0 10px;">Notes</h3>
       <ul class="muted" style="margin:0 0 6px 18px;">
-        <li>MJPG-streamer default path is <code>?action=stream</code>.</li>
-        <li>If using ngrok: use the <strong>HTTPS</strong> URL shown by ngrok.</li>
-        <li>Basic auth in the URL (e.g. <code>https://user:pass@host</code>) is blocked by browsers—use ngrok auth headers or protect the tunnel via ngrok dashboard instead.</li>
+        <li>mjpg-streamer vanligvis: <code>?action=stream</code>.</li>
+        <li>FFmpeg sin innebygde server: ofte <code>/stream.mjpg</code>.</li>
+        <li>Bruk alltid <strong>HTTPS</strong> fra ngrok på denne siden.</li>
       </ul>
     </section>
   </main>
@@ -109,24 +110,9 @@
 
   <script>
     (function () {
-      // === ADDED: Default URL and normalization ===
-      const DEFAULT_URL = "https://unfudged-controllably-leona.ngrok-free.dev/stream.mjpg";
-
-      function normalizeUrl(u) {
-        try {
-          const url = new URL(u);
-          // enforce https on GitHub Pages
-          if (location.protocol === "https:" && url.protocol !== "https:") {
-            url.protocol = "https:";
-          }
-          return url.toString();
-        } catch {
-          return u; // if it's not a valid URL, leave as-is for now
-        }
-      }
-      // ============================================
-
+      // Ikke sett en hard DEFAULT_URL (ngrok endres ofte).
       const qs = new URLSearchParams(location.search);
+
       const streamImg = document.getElementById('stream');
       const conn = document.getElementById('conn');
       const status = document.getElementById('status');
@@ -146,42 +132,76 @@
       let frames = 0;
       let fpsTimer = null;
 
+      // Hjelpere
       function getSavedUrl() {
         return qs.get('url') || localStorage.getItem('raspi_stream_url') || '';
       }
-
       function isHttpsUrl(u) {
         try { const x = new URL(u); return x.protocol === 'https:'; } catch { return false; }
+      }
+      function normalizeUrl(u) {
+        try {
+          const url = new URL(u);
+          if (location.protocol === 'https:' && url.protocol !== 'https:') url.protocol = 'https:';
+          return url.toString();
+        } catch { return u; }
+      }
+      function addTs(u) {
+        return u + (u.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+      }
+      function setConn(u) {
+        conn.textContent = 'URL: ' + u;
+        conn.href = u;
+      }
+
+      // Prøv automatisk begge kjente stier ved feil
+      let triedVariant = false;
+      function altVariant(u) {
+        try {
+          const url = new URL(u);
+          const hasQuery = url.searchParams.toString().length > 0;
+          const path = url.pathname || '/';
+          // Hvis den har ?action=stream -> prøv /stream.mjpg
+          if (url.searchParams.has('action')) {
+            url.search = '';
+            url.pathname = path.endsWith('/') ? path + 'stream.mjpg' : path + '/stream.mjpg';
+            return url.toString();
+          }
+          // Hvis path (eller root) -> prøv ?action=stream
+          url.searchParams.set('action', 'stream');
+          return url.toString();
+        } catch {
+          // Best effort fallback bare ved string:
+          if (u.includes('action=stream')) return u.replace(/\??action=stream.*$/, 'stream.mjpg');
+          if (u.endsWith('/')) return u + 'stream.mjpg';
+          return u + (u.includes('?') ? '&' : '?') + 'action=stream';
+        }
       }
 
       function applyUrl(u) {
         if (!u) {
           streamImg.removeAttribute('src');
-          conn.textContent = 'URL: not set';
+          setConn('not set');
           status.textContent = 'Idle';
           warnMixed.classList.add('hidden');
           return;
         }
-        // normalize and set
         u = normalizeUrl(u);
         inpUrl.value = u;
-        conn.textContent = 'URL: ' + u;
+        setConn(u);
 
-        // Mixed content check
         if (location.protocol === 'https:' && !isHttpsUrl(u)) {
           warnMixed.classList.remove('hidden');
         } else {
           warnMixed.classList.add('hidden');
         }
 
-        // Reset metrics
+        triedVariant = false;   // reset fallback-state
         frames = 0;
         lastLoadTime = performance.now();
         meta.textContent = 'FPS: — • Size: —';
         status.textContent = 'Connecting…';
-
-        // cache-buster param to force reloads
-        streamImg.src = u + (u.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+        streamImg.src = addTs(u);
       }
 
       function startFpsCounter() {
@@ -206,8 +226,19 @@
       });
 
       streamImg.addEventListener('error', () => {
+        // Først fallback til alternativ sti én gang
+        const current = inpUrl.value.trim();
+        if (!triedVariant && current) {
+          triedVariant = true;
+          const alt = altVariant(current);
+          inpUrl.value = alt;
+          localStorage.setItem('raspi_stream_url', alt);
+          setTimeout(() => applyUrl(alt), 300);
+          status.textContent = 'Trying alternate path…';
+          return;
+        }
         status.textContent = 'Error loading stream. Retrying…';
-        const u = getSavedUrl() || DEFAULT_URL;
+        const u = inpUrl.value.trim();
         if (u) setTimeout(() => applyUrl(u), 1500);
       });
 
@@ -226,7 +257,7 @@
       });
 
       btnReload.addEventListener('click', () => {
-        const u = getSavedUrl() || DEFAULT_URL;
+        const u = getSavedUrl();
         if (u) applyUrl(u);
       });
 
@@ -237,13 +268,10 @@
           } else {
             await document.exitFullscreen();
           }
-        } catch (e) {
-          console.warn(e);
-        }
+        } catch (e) {}
       });
 
       btnSnapshot.addEventListener('click', async () => {
-        // Merk: Snapshot kan feile pga. CORS på eksterne bilder.
         try {
           const canvas = document.createElement('canvas');
           canvas.width = streamImg.naturalWidth || 1280;
@@ -262,7 +290,7 @@
             URL.revokeObjectURL(url);
           }, 'image/png');
         } catch (e) {
-          alert('Snapshot failed. The stream might block cross-origin snapshots.');
+          alert('Snapshot failed. Cross-origin images may block snapshots.');
         }
       });
 
@@ -274,9 +302,11 @@
 
       // Init
       startFpsCounter();
-      const initial = normalizeUrl(getSavedUrl() || DEFAULT_URL);
-      inpUrl.value = initial;
-      applyUrl(initial);
+      const initial = normalizeUrl(getSavedUrl() || inpUrl.value.trim());
+      if (initial) {
+        inpUrl.value = initial;
+        applyUrl(initial);
+      }
     })();
   </script>
 </body>
