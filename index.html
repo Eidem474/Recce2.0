@@ -71,7 +71,12 @@
       <aside class="panel">
         <h3 style="margin:6px 0 10px;">Configuration</h3>
         <div class="row">
-          <input id="inpUrl" type="text" placeholder="https://<your-ngrok>.ngrok-free.app/?action=stream" style="flex:1; min-width: 200px;" />
+          <input
+            id="inpUrl"
+            type="text"
+            placeholder="https://<your-ngrok>.ngrok-free.dev/?action=stream"
+            style="flex:1; min-width: 200px;"
+            value="https://unfudged-controllably-leona.ngrok-free.dev/?action=stream" />
           <button id="btnSave" class="primary">Save</button>
           <button id="btnClear" class="danger">Clear</button>
         </div>
@@ -104,6 +109,27 @@
 
   <script>
     (function () {
+      // === ADDED: Default URL and normalization ===
+      const DEFAULT_URL = "https://unfudged-controllably-leona.ngrok-free.dev/?action=stream";
+
+      function normalizeUrl(u) {
+        try {
+          const url = new URL(u);
+          // enforce https on GitHub Pages
+          if (location.protocol === "https:" && url.protocol !== "https:") {
+            url.protocol = "https:";
+          }
+          // ensure ?action=stream exists for mjpg-streamer
+          if (!url.searchParams.has("action")) {
+            url.searchParams.set("action", "stream");
+          }
+          return url.toString();
+        } catch {
+          return u; // if it's not a valid URL, leave as-is for now
+        }
+      }
+      // ============================================
+
       const qs = new URLSearchParams(location.search);
       const streamImg = document.getElementById('stream');
       const conn = document.getElementById('conn');
@@ -140,19 +166,25 @@
           warnMixed.classList.add('hidden');
           return;
         }
+        // normalize and set
+        u = normalizeUrl(u);
         inpUrl.value = u;
         conn.textContent = 'URL: ' + u;
-        // Check mixed content
+
+        // Mixed content check
         if (location.protocol === 'https:' && !isHttpsUrl(u)) {
           warnMixed.classList.remove('hidden');
         } else {
           warnMixed.classList.add('hidden');
         }
+
         // Reset metrics
         frames = 0;
         lastLoadTime = performance.now();
         meta.textContent = 'FPS: — • Size: —';
         status.textContent = 'Connecting…';
+
+        // cache-buster param to force reloads
         streamImg.src = u + (u.includes('?') ? '&' : '?') + '_ts=' + Date.now();
       }
 
@@ -179,14 +211,14 @@
 
       streamImg.addEventListener('error', () => {
         status.textContent = 'Error loading stream. Retrying…';
-        // basic retry with cache-buster
-        const u = getSavedUrl();
+        const u = getSavedUrl() || DEFAULT_URL;
         if (u) setTimeout(() => applyUrl(u), 1500);
       });
 
       btnSave.addEventListener('click', () => {
-        const u = inpUrl.value.trim();
+        let u = inpUrl.value.trim();
         if (!u) return;
+        u = normalizeUrl(u);
         localStorage.setItem('raspi_stream_url', u);
         applyUrl(u);
       });
@@ -198,7 +230,7 @@
       });
 
       btnReload.addEventListener('click', () => {
-        const u = getSavedUrl();
+        const u = getSavedUrl() || DEFAULT_URL;
         if (u) applyUrl(u);
       });
 
@@ -215,7 +247,7 @@
       });
 
       btnSnapshot.addEventListener('click', async () => {
-        // Snapshot by drawing the <img> to a canvas
+        // Merk: Snapshot kan feile pga. CORS på eksterne bilder.
         try {
           const canvas = document.createElement('canvas');
           canvas.width = streamImg.naturalWidth || 1280;
@@ -246,11 +278,9 @@
 
       // Init
       startFpsCounter();
-      const initial = getSavedUrl();
-      if (initial) {
-        inpUrl.value = initial;
-        applyUrl(initial);
-      }
+      const initial = normalizeUrl(getSavedUrl() || DEFAULT_URL);
+      inpUrl.value = initial;
+      applyUrl(initial);
     })();
   </script>
 </body>
