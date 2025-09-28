@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Raspberry Pi Camera</title>
+  <meta name="color-scheme" content="dark light" />
+  <style>
+    :root { --bg:#0c0f12; --panel:#141a21; --text:#e8edf2; --muted:#9fb0c0; --accent:#6bb1ff; --danger:#ff6b6b; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+           background: var(--bg); color: var(--text); display: grid; grid-template-rows: auto 1fr auto; }
+    header, footer { padding: 12px 16px; background: var(--panel); border-bottom: 1px solid #1e2630; }
+    footer { border-top: 1px solid #1e2630; border-bottom: none; font-size: 12px; color: var(--muted); }
+    .wrap { padding: 16px; display: grid; gap: 16px; max-width: 1200px; width: 100%; margin: 0 auto; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .controls .spacer { flex: 1; }
+    button, input[type="text"] {
+      background: #0f141a; color: var(--text); border: 1px solid #26313d; border-radius: 10px; padding: 10px 12px;
+      font-size: 14px;
+    }
+    button:hover { border-color: #3a4b5b; cursor: pointer; }
+    .primary { border-color: #2b70c9; }
+    .danger { border-color: #7a2b2b; color: #ffdede; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .panel { background: var(--panel); border: 1px solid #1e2630; border-radius: 14px; padding: 12px; }
+    .videoStage { position: relative; display: grid; place-items: center; background: #0b0f14; min-height: 40vh; }
+    .videoStage img { max-width: 100%; height: auto; display: block; border-radius: 10px; }
+    .badge {
+      position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5);
+      border: 1px solid #1e2630; color: var(--muted); padding: 6px 8px; border-radius: 8px; font-size: 12px;
+    }
+    .topRight { left: auto; right: 10px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .row > * { margin-right: 0; }
+    .hint { font-size: 12px; color: var(--muted); }
+    .error { color: var(--danger); font-weight: 600; }
+    .hidden { display: none !important; }
+
+    @media (min-width: 900px) {
+      .grid { grid-template-columns: 1fr 320px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="row" style="justify-content: space-between;">
+      <div class="row" style="gap:10px;">
+        <strong>Raspberry Pi Camera</strong>
+        <span id="status" class="muted">Idle</span>
+      </div>
+      <div class="row">
+        <button id="btnSetUrl" class="primary">Set stream URL</button>
+        <button id="btnFullscreen">Fullscreen</button>
+        <button id="btnSnapshot">Snapshot</button>
+        <button id="btnReload">Reload</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="grid">
+      <section class="panel videoStage" id="stage">
+        <div class="badge" id="meta">FPS: — • Size: —</div>
+        <div class="badge topRight" id="conn">URL: not set</div>
+        <img id="stream" alt="Camera stream" referrerpolicy="no-referrer" />
+      </section>
+
+      <aside class="panel">
+        <h3 style="margin:6px 0 10px;">Configuration</h3>
+        <div class="row">
+          <input id="inpUrl" type="text" placeholder="https://<your-ngrok>.ngrok-free.app/?action=stream" style="flex:1; min-width: 200px;" />
+          <button id="btnSave" class="primary">Save</button>
+          <button id="btnClear" class="danger">Clear</button>
+        </div>
+        <p class="hint" style="margin-top:8px;">
+          Tip: You can also pass the stream with <code>?url=...</code> in the address bar.
+          The URL is saved locally in your browser.
+        </p>
+        <div id="warnMixed" class="hint error hidden">
+          Your stream must be <strong>HTTPS</strong> to display on this page (GitHub Pages is HTTPS).
+        </div>
+      </aside>
+    </div>
+
+    <section class="panel">
+      <h3 style="margin:6px 0 10px;">Notes</h3>
+      <ul class="muted" style="margin:0 0 6px 18px;">
+        <li>MJPG-streamer default path is <code>?action=stream</code>.</li>
+        <li>If using ngrok: use the <strong>HTTPS</strong> URL shown by ngrok.</li>
+        <li>Basic auth in the URL (e.g. <code>https://user:pass@host</code>) is blocked by browsers—use ngrok auth headers or protect the tunnel via ngrok dashboard instead.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <div class="row" style="justify-content: space-between;">
+      <span>Built for Spectac • Static viewer (no backend)</span>
+      <span class="muted">© 2025</span>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      const streamImg = document.getElementById('stream');
+      const conn = document.getElementById('conn');
+      const status = document.getElementById('status');
+      const meta = document.getElementById('meta');
+      const warnMixed = document.getElementById('warnMixed');
+      const inpUrl = document.getElementById('inpUrl');
+
+      const btnSave = document.getElementById('btnSave');
+      const btnClear = document.getElementById('btnClear');
+      const btnReload = document.getElementById('btnReload');
+      const btnFullscreen = document.getElementById('btnFullscreen');
+      const btnSnapshot = document.getElementById('btnSnapshot');
+      const btnSetUrl = document.getElementById('btnSetUrl');
+      const stage = document.getElementById('stage');
+
+      let lastLoadTime = 0;
+      let frames = 0;
+      let fpsTimer = null;
+
+      function getSavedUrl() {
+        return qs.get('url') || localStorage.getItem('raspi_stream_url') || '';
+      }
+
+      function isHttpsUrl(u) {
+        try { const x = new URL(u); return x.protocol === 'https:'; } catch { return false; }
+      }
+
+      function applyUrl(u) {
+        if (!u) {
+          streamImg.removeAttribute('src');
+          conn.textContent = 'URL: not set';
+          status.textContent = 'Idle';
+          warnMixed.classList.add('hidden');
+          return;
+        }
+        inpUrl.value = u;
+        conn.textContent = 'URL: ' + u;
+        // Check mixed content
+        if (location.protocol === 'https:' && !isHttpsUrl(u)) {
+          warnMixed.classList.remove('hidden');
+        } else {
+          warnMixed.classList.add('hidden');
+        }
+        // Reset metrics
+        frames = 0;
+        lastLoadTime = performance.now();
+        meta.textContent = 'FPS: — • Size: —';
+        status.textContent = 'Connecting…';
+        streamImg.src = u + (u.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+      }
+
+      function startFpsCounter() {
+        if (fpsTimer) clearInterval(fpsTimer);
+        fpsTimer = setInterval(() => {
+          const now = performance.now();
+          const elapsed = (now - lastLoadTime) / 1000;
+          const fps = elapsed > 0 ? (frames / elapsed) : 0;
+          const size = streamImg.naturalWidth && streamImg.naturalHeight
+            ? (streamImg.naturalWidth + '×' + streamImg.naturalHeight)
+            : '—';
+          meta.textContent = 'FPS: ' + fps.toFixed(1) + ' • Size: ' + size;
+          frames = 0;
+          lastLoadTime = now;
+        }, 1000);
+      }
+
+      // Events
+      streamImg.addEventListener('load', () => {
+        frames++;
+        status.textContent = 'Streaming';
+      });
+
+      streamImg.addEventListener('error', () => {
+        status.textContent = 'Error loading stream. Retrying…';
+        // basic retry with cache-buster
+        const u = getSavedUrl();
+        if (u) setTimeout(() => applyUrl(u), 1500);
+      });
+
+      btnSave.addEventListener('click', () => {
+        const u = inpUrl.value.trim();
+        if (!u) return;
+        localStorage.setItem('raspi_stream_url', u);
+        applyUrl(u);
+      });
+
+      btnClear.addEventListener('click', () => {
+        localStorage.removeItem('raspi_stream_url');
+        inpUrl.value = '';
+        applyUrl('');
+      });
+
+      btnReload.addEventListener('click', () => {
+        const u = getSavedUrl();
+        if (u) applyUrl(u);
+      });
+
+      btnFullscreen.addEventListener('click', async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await stage.requestFullscreen();
+          } else {
+            await document.exitFullscreen();
+          }
+        } catch (e) {
+          console.warn(e);
+        }
+      });
+
+      btnSnapshot.addEventListener('click', async () => {
+        // Snapshot by drawing the <img> to a canvas
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = streamImg.naturalWidth || 1280;
+          canvas.height = streamImg.naturalHeight || 720;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(streamImg, 0, 0);
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'snapshot_' + new Date().toISOString().replace(/[:.]/g,'-') + '.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }, 'image/png');
+        } catch (e) {
+          alert('Snapshot failed. The stream might block cross-origin snapshots.');
+        }
+      });
+
+      btnSetUrl.addEventListener('click', () => {
+        setTimeout(() => inpUrl.focus(), 0);
+        inpUrl.select();
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
+
+      // Init
+      startFpsCounter();
+      const initial = getSavedUrl();
+      if (initial) {
+        inpUrl.value = initial;
+        applyUrl(initial);
+      }
+    })();
+  </script>
+</body>
+</html>
