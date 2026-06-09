@@ -1,313 +1,1149 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="nb">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Raspberry Pi Camera</title>
-  <meta name="color-scheme" content="dark light" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nest Digital – Moderne nettdesign for små bedrifter</title>
+  <meta name="description" content="Nest Digital lager profesjonelle nettsider for lokale bedrifter. Enkel prosess, fast pris, raske resultater." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
-    :root { --bg:#0c0f12; --panel:#141a21; --text:#e8edf2; --muted:#9fb0c0; --accent:#6bb1ff; --danger:#ff6b6b; }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-           background: var(--bg); color: var(--text); display: grid; grid-template-rows: auto 1fr auto; }
-    header, footer { padding: 12px 16px; background: var(--panel); border-bottom: 1px solid #1e2630; }
-    footer { border-top: 1px solid #1e2630; border-bottom: none; font-size: 12px; color: var(--muted); }
-    .wrap { padding: 16px; display: grid; gap: 16px; max-width: 1200px; width: 100%; margin: 0 auto; }
-    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .controls .spacer { flex: 1; }
-    button, input[type="text"] {
-      background: #0f141a; color: var(--text); border: 1px solid #26313d; border-radius: 10px; padding: 10px 12px;
-      font-size: 14px;
+    /* ─── Reset & base ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0d2233;
+      --teal:   #1e5f6d;
+      --teal-light: #2a7a8c;
+      --gold:   #D4AF82;
+      --gold-dark: #b8935e;
+      --cyan:   #00B4D8;
+      --white:  #ffffff;
+      --off-white: #f4f1ec;
+      --text:   #1a2730;
+      --muted:  #5a7080;
+      --border: #dde4e8;
+      --section-gap: 100px;
     }
-    button:hover { border-color: #3a4b5b; cursor: pointer; }
-    .primary { border-color: #2b70c9; }
-    .danger { border-color: #7a2b2b; color: #ffdede; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
-    .panel { background: var(--panel); border: 1px solid #1e2630; border-radius: 14px; padding: 12px; }
-    .videoStage { position: relative; display: grid; place-items: center; background: #0b0f14; min-height: 40vh; }
-    .videoStage img { max-width: 100%; height: auto; display: block; border-radius: 10px; }
-    .badge {
-      position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.5);
-      border: 1px solid #1e2630; color: var(--muted); padding: 6px 8px; border-radius: 8px; font-size: 12px;
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Jost', sans-serif;
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--text);
+      background: var(--white);
     }
-    .topRight { left: auto; right: 10px; }
-    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .row > * { margin-right: 0; }
-    .hint { font-size: 12px; color: var(--muted); }
-    .error { color: var(--danger); font-weight: 600; }
-    .hidden { display: none !important; }
+
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Typography ───────────────────────────────────────── */
+    h1, h2, h3, h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+
+    h1 { font-size: clamp(2.6rem, 6vw, 4.4rem); }
+    h2 { font-size: clamp(2rem, 4vw, 3rem); }
+    h3 { font-size: clamp(1.3rem, 2.5vw, 1.8rem); }
+
+    .label {
+      font-family: 'Jost', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    /* ─── Layout helpers ───────────────────────────────────── */
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section { padding: var(--section-gap) 0; }
+
+    .section--dark {
+      background: var(--navy);
+      color: var(--white);
+    }
+
+    .section--soft {
+      background: var(--off-white);
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-header .label { margin-bottom: 12px; display: block; }
+    .section-header h2 { margin-bottom: 16px; }
+    .section-header p {
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+
+    .section--dark .section-header p { color: #8faaba; }
+
+    /* ─── Buttons ──────────────────────────────────────────── */
+    .btn {
+      display: inline-block;
+      padding: 14px 32px;
+      border-radius: 2px;
+      font-family: 'Jost', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      border: 1.5px solid transparent;
+    }
+
+    .btn--primary {
+      background: var(--gold);
+      color: var(--navy);
+      border-color: var(--gold);
+    }
+    .btn--primary:hover {
+      background: var(--gold-dark);
+      border-color: var(--gold-dark);
+    }
+
+    .btn--outline {
+      background: transparent;
+      color: var(--white);
+      border-color: rgba(255,255,255,0.45);
+    }
+    .btn--outline:hover {
+      border-color: var(--white);
+    }
+
+    .btn--outline-dark {
+      background: transparent;
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+    .btn--outline-dark:hover {
+      background: var(--teal);
+      color: var(--white);
+    }
+
+    /* ─── NAV ──────────────────────────────────────────────── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 0 24px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    .nav.scrolled {
+      background: rgba(13, 34, 51, 0.97);
+      box-shadow: 0 1px 20px rgba(0,0,0,0.25);
+    }
+
+    .nav__logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: 0.04em;
+    }
+
+    .nav__logo span { color: var(--gold); }
+
+    .nav__links {
+      display: none;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav__links a {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.875rem;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+
+    .nav__links a:hover { color: var(--white); }
+
+    .nav__cta {
+      display: none;
+    }
+
+    .nav__hamburger {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .nav__hamburger span {
+      display: block;
+      width: 24px;
+      height: 1.5px;
+      background: var(--white);
+      transition: all 0.25s;
+    }
+
+    /* Mobile menu open */
+    .nav__hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .nav__hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav__hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .mobile-menu {
+      display: none;
+      position: fixed;
+      top: 68px; left: 0; right: 0;
+      background: var(--navy);
+      padding: 24px;
+      z-index: 99;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .mobile-menu.open { display: block; }
+
+    .mobile-menu ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .mobile-menu a {
+      display: block;
+      color: rgba(255,255,255,0.8);
+      padding: 14px 0;
+      font-size: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .mobile-menu .btn { margin-top: 20px; width: 100%; text-align: center; }
+
+    @media (min-width: 768px) {
+      .nav__links { display: flex; }
+      .nav__cta { display: inline-block; }
+      .nav__hamburger { display: none; }
+    }
+
+    /* ─── HERO ─────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #0a1c29 0%, #0d2233 45%, #143040 100%);
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 60vw;
+      height: 60vw;
+      max-width: 700px;
+      max-height: 700px;
+      background: radial-gradient(circle, rgba(30,95,109,0.25) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -15%;
+      left: -5%;
+      width: 50vw;
+      height: 50vw;
+      max-width: 600px;
+      max-height: 600px;
+      background: radial-gradient(circle, rgba(212,175,130,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .hero__inner {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+    }
+
+    .hero .label { margin-bottom: 20px; display: block; }
+
+    .hero h1 {
+      color: var(--white);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .hero__sub {
+      color: rgba(255,255,255,0.65);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      margin-bottom: 44px;
+      max-width: 520px;
+      font-weight: 300;
+    }
+
+    .hero__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .hero__scroll {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.3);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .hero__scroll::after {
+      content: '';
+      display: block;
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent);
+    }
+
+    /* ─── ABOUT ────────────────────────────────────────────── */
+    .about__grid {
+      display: grid;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .about__text .label { margin-bottom: 14px; display: block; }
+    .about__text h2 { margin-bottom: 20px; }
+
+    .about__text p {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: 1.05rem;
+    }
+
+    .about__text p:last-of-type { margin-bottom: 32px; }
+
+    .about__stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+    }
+
+    .stat__number {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.4rem;
+      font-weight: 300;
+      color: var(--teal);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .stat__label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
 
     @media (min-width: 900px) {
-      .grid { grid-template-columns: 1fr 320px; }
+      .about__grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ─── PAKKE ────────────────────────────────────────────── */
+    .pakke__card {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .pakke__header {
+      background: var(--teal);
+      padding: 40px 44px 36px;
+      color: var(--white);
+    }
+
+    .pakke__header .label { color: rgba(255,255,255,0.55); margin-bottom: 10px; display: block; }
+
+    .pakke__header h3 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      color: var(--white);
+    }
+
+    .pakke__price {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      color: var(--gold);
+    }
+
+    .pakke__price span {
+      font-family: 'Jost', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .pakke__body {
+      padding: 40px 44px;
+    }
+
+    .pakke__features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+
+    .pakke__features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .pakke__features li::before {
+      content: '';
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
+      background: var(--gold);
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+
+    .pakke__note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      margin-top: 8px;
+    }
+
+    /* ─── CASE ─────────────────────────────────────────────── */
+    .case__grid {
+      display: grid;
+      gap: 48px;
+    }
+
+    .case__card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .case__visuals {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .case__visual {
+      aspect-ratio: 4/3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .case__visual--before { background: #0a1825; }
+    .case__visual--after { background: #122030; }
+
+    .case__visual-label {
+      padding: 8px 14px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.68rem;
+      letter-spacing: 0.12em;
+    }
+
+    .case__content {
+      padding: 36px 40px;
+    }
+
+    .case__content .label { margin-bottom: 10px; display: block; }
+    .case__content h3 { color: var(--white); margin-bottom: 14px; }
+    .case__content p { color: rgba(255,255,255,0.55); font-size: 0.95rem; }
+
+    .case__result {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 22px;
+      padding: 12px 20px;
+      background: rgba(212,175,130,0.1);
+      border: 1px solid rgba(212,175,130,0.25);
+      border-radius: 2px;
+    }
+
+    .case__result strong {
+      color: var(--gold);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem;
+      font-weight: 400;
+    }
+
+    .case__result span {
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+    }
+
+    @media (min-width: 900px) {
+      .case__card { grid-template-columns: 1fr 1fr; display: grid; }
+      .case__visuals { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    }
+
+    /* ─── PROCESS ──────────────────────────────────────────── */
+    .process__steps {
+      display: grid;
+      gap: 0;
+      counter-reset: steps;
+    }
+
+    .process__step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 28px;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: start;
+    }
+
+    .process__step:last-child { border-bottom: none; }
+
+    .process__num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--gold);
+      width: 36px;
+      text-align: right;
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
+
+    .process__step h3 {
+      margin-bottom: 8px;
+      font-size: 1.3rem;
+    }
+
+    .process__step p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 500px;
+    }
+
+    .process__badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 5px 12px;
+      background: rgba(30,95,109,0.1);
+      border: 1px solid rgba(30,95,109,0.2);
+      border-radius: 2px;
+      font-size: 0.78rem;
+      color: var(--teal);
+      letter-spacing: 0.04em;
+    }
+
+    /* ─── FAQ ──────────────────────────────────────────────── */
+    .faq__list {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .faq__item {
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .faq__q {
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      padding: 26px 0;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      font-family: 'Jost', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--white);
+    }
+
+    .faq__icon {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      position: relative;
+    }
+
+    .faq__icon::before,
+    .faq__icon::after {
+      content: '';
+      position: absolute;
+      background: var(--gold);
+      transition: opacity 0.25s, transform 0.25s;
+    }
+
+    .faq__icon::before { width: 14px; height: 1.5px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .faq__icon::after  { width: 1.5px; height: 14px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+    .faq__item.open .faq__icon::after { transform: translate(-50%, -50%) rotate(90deg); opacity: 0; }
+
+    .faq__a {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .faq__a-inner {
+      padding-bottom: 24px;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      line-height: 1.75;
+    }
+
+    .faq__item.open .faq__a { max-height: 300px; }
+
+    /* ─── CONTACT ──────────────────────────────────────────── */
+    .contact__grid {
+      display: grid;
+      gap: 60px;
+      align-items: start;
+    }
+
+    .contact__info .label { margin-bottom: 14px; display: block; }
+    .contact__info h2 { margin-bottom: 20px; }
+    .contact__info p { color: var(--muted); margin-bottom: 32px; font-size: 1.05rem; }
+
+    .contact__details {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .contact__detail {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .contact__detail a:hover { color: var(--teal); }
+
+    .contact__icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 2px;
+      background: var(--off-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .contact__icon svg { width: 18px; height: 18px; stroke: var(--teal); fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* Form */
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .form__row { display: grid; gap: 18px; }
+
+    .form__group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .form__group label {
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .form__group input,
+    .form__group textarea,
+    .form__group select {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 2px;
+      background: var(--white);
+      font-family: 'Jost', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+
+    .form__group input:focus,
+    .form__group textarea:focus,
+    .form__group select:focus { border-color: var(--teal); }
+
+    .form__group textarea { resize: vertical; min-height: 130px; }
+
+    .form__submit { align-self: flex-start; }
+
+    @media (min-width: 600px) {
+      .form__row { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 900px) {
+      .contact__grid { grid-template-columns: 5fr 7fr; }
+    }
+
+    /* ─── FOOTER ───────────────────────────────────────────── */
+    .footer {
+      background: #071118;
+      color: rgba(255,255,255,0.35);
+      padding: 40px 0;
+      font-size: 0.85rem;
+    }
+
+    .footer__inner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer__logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .footer__logo span { color: var(--gold); }
+
+    /* ─── Responsive tweaks ────────────────────────────────── */
+    @media (max-width: 500px) {
+      :root { --section-gap: 70px; }
+      .pakke__header, .pakke__body { padding: 28px 24px; }
+      .case__content { padding: 28px 24px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="row" style="justify-content: space-between;">
-      <div class="row" style="gap:10px;">
-        <strong>Raspberry Pi Camera</strong>
-        <span id="status" class="muted">Idle</span>
-      </div>
-      <div class="row">
-        <button id="btnSetUrl" class="primary">Set stream URL</button>
-        <button id="btnFullscreen">Fullscreen</button>
-        <button id="btnSnapshot">Snapshot</button>
-        <button id="btnReload">Reload</button>
+
+  <!-- ─── NAV ──────────────────────────────────────────── -->
+  <nav class="nav" id="nav">
+    <a href="#" class="nav__logo">Nest<span>.</span>Digital</a>
+    <ul class="nav__links">
+      <li><a href="#om">Om meg</a></li>
+      <li><a href="#pakke">Pakke</a></li>
+      <li><a href="#prosess">Prosess</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#kontakt" class="btn btn--primary nav__cta">Kontakt oss</a>
+    <button class="nav__hamburger" id="hamburger" aria-label="Meny">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="#om" class="mobile-link">Om meg</a></li>
+      <li><a href="#pakke" class="mobile-link">Pakke og priser</a></li>
+      <li><a href="#eksempler" class="mobile-link">Eksempler</a></li>
+      <li><a href="#prosess" class="mobile-link">Prosess</a></li>
+      <li><a href="#faq" class="mobile-link">FAQ</a></li>
+      <li><a href="#kontakt" class="mobile-link">Kontakt</a></li>
+    </ul>
+    <a href="#kontakt" class="btn btn--primary mobile-link">Kontakt oss</a>
+  </div>
+
+  <!-- ─── HERO ──────────────────────────────────────────── -->
+  <section class="hero" id="topp">
+    <div class="container">
+      <div class="hero__inner">
+        <span class="label">Nettdesign for lokale bedrifter</span>
+        <h1>Moderne nettdesign for <em>små bedrifter</em></h1>
+        <p class="hero__sub">Vi lager nettsider som faktisk fungerer. Og som dine kunder finner.</p>
+        <div class="hero__actions">
+          <a href="#pakke" class="btn btn--primary">Se prisene</a>
+          <a href="#kontakt" class="btn btn--outline">Kontakt oss</a>
+        </div>
       </div>
     </div>
-  </header>
+    <div class="hero__scroll">Scroll</div>
+  </section>
 
-  <main class="wrap">
-    <div class="grid">
-      <section class="panel videoStage" id="stage">
-        <div class="badge" id="meta">FPS: — • Size: —</div>
-        <!-- Gjør URL-badge klikkbar for enkel testing -->
-        <a id="conn" class="badge topRight" target="_blank" rel="noopener noreferrer">URL: not set</a>
-        <img id="stream" alt="Camera stream" referrerpolicy="no-referrer" />
-      </section>
-
-      <aside class="panel">
-        <h3 style="margin:6px 0 10px;">Configuration</h3>
-        <div class="row">
-          <input
-            id="inpUrl"
-            type="text"
-            placeholder="Paste your ngrok HTTPS URL here (root or full path)"
-            style="flex:1; min-width: 200px;"
-            value="https://unfudged-controllably-leona.ngrok-free.dev/?action=stream" />
-          <button id="btnSave" class="primary">Save</button>
-          <button id="btnClear" class="danger">Clear</button>
+  <!-- ─── OM MEG ─────────────────────────────────────────── -->
+  <section class="section" id="om">
+    <div class="container">
+      <div class="about__grid">
+        <div class="about__text">
+          <span class="label">Om meg</span>
+          <h2>Enkelt. Raskt. Lokalt.</h2>
+          <p>Jeg lager nettsider som sideprosjekt mens jeg er i pappaperm. Det betyr direkte kontakt, ingen mellomledd og rask levering uten byrabyrakrati.</p>
+          <p>Fokuset mitt er på lokale bedrifter som trenger en profesjonell tilstedevarelse uten komplisert prosess. En nettside skal generere kunder, ikke hodepine.</p>
+          <p>Jeg tror på enkelt design, tydelige budskap og nettsider som faktisk laster raskt.</p>
+          <a href="#kontakt" class="btn btn--outline-dark">Book gratis samtale</a>
         </div>
-        <p class="hint" style="margin-top:8px;">
-          Tip: You can also pass the stream with <code>?url=...</code> in the address bar.
-          The URL is saved locally in your browser.
-        </p>
-        <div id="warnMixed" class="hint error hidden">
-          Your stream must be <strong>HTTPS</strong> to display on this page (GitHub Pages is HTTPS).
+        <div class="about__stats">
+          <div class="stat">
+            <div class="stat__number">1–2</div>
+            <div class="stat__label">Uker fra oppstart til launch</div>
+          </div>
+          <div class="stat">
+            <div class="stat__number">30</div>
+            <div class="stat__label">Min gratis konsultasjon</div>
+          </div>
+          <div class="stat">
+            <div class="stat__number">100%</div>
+            <div class="stat__label">Fokus pa dine kunder</div>
+          </div>
+          <div class="stat">
+            <div class="stat__number">Fast</div>
+            <div class="stat__label">Pris, ingen overraskelser</div>
+          </div>
         </div>
-      </aside>
+      </div>
     </div>
+  </section>
 
-    <section class="panel">
-      <h3 style="margin:6px 0 10px;">Notes</h3>
-      <ul class="muted" style="margin:0 0 6px 18px;">
-        <li>mjpg-streamer vanligvis: <code>?action=stream</code>.</li>
-        <li>FFmpeg sin innebygde server: ofte <code>/stream.mjpg</code>.</li>
-        <li>Bruk alltid <strong>HTTPS</strong> fra ngrok på denne siden.</li>
-      </ul>
-    </section>
-  </main>
+  <!-- ─── PAKKE ─────────────────────────────────────────── -->
+  <section class="section section--soft" id="pakke">
+    <div class="container">
+      <div class="section-header">
+        <span class="label">Pakke og priser</span>
+        <h2>Alt du trenger for a komme i gang</h2>
+        <p>En komplett pakke for din bedrift. Ingen skjulte kostnader.</p>
+      </div>
 
-  <footer>
-    <div class="row" style="justify-content: space-between;">
-      <span>Built for Spectac • Static viewer (no backend)</span>
-      <span class="muted">© 2025</span>
+      <div class="pakke__card">
+        <div class="pakke__header">
+          <span class="label">Starterpakken</span>
+          <h3>Komplett nettside</h3>
+          <div class="pakke__price">Fra 3&thinsp;500 kr <span>engangssum</span></div>
+        </div>
+        <div class="pakke__body">
+          <ul class="pakke__features">
+            <li>Moderne, responsivt design tilpasset din bedrift</li>
+            <li>Google Business Profile – oppsett og optimalisering</li>
+            <li>Hjelp med domene og e-postkonto</li>
+            <li>1 time gratis endringer etter levering</li>
+            <li>Hosting inkludert det første aret</li>
+            <li>Opplaering i hvordan du oppdaterer innhold selv</li>
+            <li>Mobil-forst design som laster raskt</li>
+          </ul>
+          <a href="#kontakt" class="btn btn--primary">Start i dag</a>
+          <p class="pakke__note">Etterfolgende hostingkostnad fra ca. 800 kr/ar. Prisene er eks. mva. Tilleggstjenester som nettbutikk, bookingsystem og lignende prises separat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── EKSEMPLER ──────────────────────────────────────── -->
+  <section class="section section--dark" id="eksempler">
+    <div class="container">
+      <div class="section-header">
+        <span class="label">Resultater</span>
+        <h2>Eksempel pa arbeid</h2>
+        <p>En nettside skal ikke bare se bra ut – den skal trekke kunder.</p>
+      </div>
+
+      <div class="case__grid">
+        <div class="case__card">
+          <div class="case__visuals">
+            <div class="case__visual case__visual--before">
+              <div class="case__visual-label">For</div>
+            </div>
+            <div class="case__visual case__visual--after">
+              <div class="case__visual-label">Etter</div>
+            </div>
+          </div>
+          <div class="case__content">
+            <span class="label">Frisorsalong – Hamar</span>
+            <h3>Borstad Harstudio</h3>
+            <p>Lokal frisorsalong uten nettside. Vi laget en moderne, raskt-lastende side med onlinebooking, prisliste og Google Maps-integrasjon.</p>
+            <div class="case__result">
+              <strong>250+</strong>
+              <span>besok i forste maned etter launch</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PROSESS ────────────────────────────────────────── -->
+  <section class="section" id="prosess">
+    <div class="container">
+      <div class="section-header">
+        <span class="label">Slik jobber vi</span>
+        <h2>Enkel prosess fra start til mal</h2>
+        <p>Fire steg. Ingen overraskelser.</p>
+      </div>
+
+      <div class="process__steps">
+        <div class="process__step">
+          <div class="process__num">01</div>
+          <div>
+            <h3>Gratis konsultasjon</h3>
+            <p>Vi snakkes over telefon eller video i 30 minutter. Jeg lytter til hva du trenger, forklarer hva som passer best for deg og gir et konkret tilbud.</p>
+            <span class="process__badge">30 min – gratis</span>
+          </div>
+        </div>
+        <div class="process__step">
+          <div class="process__num">02</div>
+          <div>
+            <h3>Design og utvikling</h3>
+            <p>Jeg lager et utkast til design for din godkjenning, deretter bygger jeg nettsiden. Du far loven til a se og godkjenne underveis.</p>
+            <span class="process__badge">1–2 uker</span>
+          </div>
+        </div>
+        <div class="process__step">
+          <div class="process__num">03</div>
+          <div>
+            <h3>Launch og opplaering</h3>
+            <p>Vi publiserer nettsiden og jeg gar gjennom alt med deg sa du kan gjore enkle oppdateringer pa egenhend. Domene, e-post og Google Business settes opp.</p>
+            <span class="process__badge">Inkludert i pakken</span>
+          </div>
+        </div>
+        <div class="process__step">
+          <div class="process__num">04</div>
+          <div>
+            <h3>Lopende support</h3>
+            <p>Etter launch er jeg tilgjengelig pa e-post og telefon om noe skulle dukke opp. Storre endringer avtales separat til en fornuftig timepris.</p>
+            <span class="process__badge">Pa bestilling</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ───────────────────────────────────────────── -->
+  <section class="section section--dark" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="label">Sporsmal og svar</span>
+        <h2>Ofte stilte sporsmal</h2>
+      </div>
+
+      <div class="faq__list">
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false">
+            Hva koster det?
+            <span class="faq__icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a">
+            <p class="faq__a-inner">Starterpakken begynner fra 3 500 kr som engangssum. Dette dekker design, utvikling, Google Business Profile-oppsett, domenehjelp og hosting det forste aret. Etterfolgendede arshosting koster ca. 800 kr. Alle priser er eks. mva.</p>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false">
+            Hvor lang tid tar det?
+            <span class="faq__icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a">
+            <p class="faq__a-inner">De fleste nettsider er ferdig innen 1–2 uker etter at vi har godkjent designutkastet. Det avhenger av hvor raskt du gir tilbakemelding og leverer innhold (tekst og bilder).</p>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false">
+            Kan dere endre ting etterparet?
+            <span class="faq__icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a">
+            <p class="faq__a-inner">Ja. Pakken inkluderer 1 time gratis endringer etter levering. For storre justeringer tilbyr jeg lopende support til en fast timepris. Mange enkle oppdateringer kan du ogsa gjore selv – jeg laerer deg opp ved levering.</p>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false">
+            Hva med e-post?
+            <span class="faq__icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a">
+            <p class="faq__a-inner">Profesjonell e-post (f.eks. post@dinbedrift.no) er inkludert i oppsettshjelpen. Selve e-posttjenesten driftes gjennom en tredjepart (f.eks. Google Workspace eller Microsoft 365) og faktureres direkte av dem, typisk fra 60–130 kr per bruker per maned.</p>
+          </div>
+        </div>
+        <div class="faq__item">
+          <button class="faq__q" aria-expanded="false">
+            Trenger jeg et domene fra for?
+            <span class="faq__icon" aria-hidden="true"></span>
+          </button>
+          <div class="faq__a">
+            <p class="faq__a-inner">Nei. Jeg hjelper deg med a registrere et passende domenenavn som del av prosessen. Hvis du allerede har et domene overforer vi det enkelt til den nye nettsiden.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── KONTAKT ────────────────────────────────────────── -->
+  <section class="section" id="kontakt">
+    <div class="container">
+      <div class="contact__grid">
+        <div class="contact__info">
+          <span class="label">Kontakt</span>
+          <h2>La oss snakke om din nettside</h2>
+          <p>Send en melding eller ring direkte. Forste samtale er alltid gratis og uforpliktende.</p>
+          <div class="contact__details">
+            <div class="contact__detail">
+              <div class="contact__icon">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </div>
+              <a href="mailto:hei@nestdigital.no">hei@nestdigital.no</a>
+            </div>
+            <div class="contact__detail">
+              <div class="contact__icon">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.1 10.77a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              </div>
+              <a href="tel:+4712345678">+47 123 45 678</a>
+            </div>
+          </div>
+        </div>
+
+        <form class="form" id="contactForm" novalidate>
+          <div class="form__row">
+            <div class="form__group">
+              <label for="navn">Navn</label>
+              <input type="text" id="navn" name="navn" placeholder="Ditt navn" required />
+            </div>
+            <div class="form__group">
+              <label for="bedrift">Bedrift</label>
+              <input type="text" id="bedrift" name="bedrift" placeholder="Bedriftsnavn" />
+            </div>
+          </div>
+          <div class="form__group">
+            <label for="epost">E-post</label>
+            <input type="email" id="epost" name="epost" placeholder="din@epost.no" required />
+          </div>
+          <div class="form__group">
+            <label for="interesse">Hva er du interessert i?</label>
+            <select id="interesse" name="interesse">
+              <option value="">Velg et alternativ</option>
+              <option value="nettside">Ny nettside</option>
+              <option value="oppdatering">Oppdatere eksisterende nettside</option>
+              <option value="google">Google Business Profile</option>
+              <option value="annet">Annet</option>
+            </select>
+          </div>
+          <div class="form__group">
+            <label for="melding">Melding</label>
+            <textarea id="melding" name="melding" placeholder="Fortell litt om bedriften din og hva du ser etter..."></textarea>
+          </div>
+          <button type="submit" class="btn btn--primary form__submit">Send melding</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__logo">Nest<span>.</span>Digital</div>
+        <div>Moderne nettdesign for sma bedrifter</div>
+        <div>&copy; 2025 Nest Digital. Org.nr. ikke tildelt.</div>
+      </div>
     </div>
   </footer>
 
   <script>
-    (function () {
-      // Ikke sett en hard DEFAULT_URL (ngrok endres ofte).
-      const qs = new URLSearchParams(location.search);
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive: true });
 
-      const streamImg = document.getElementById('stream');
-      const conn = document.getElementById('conn');
-      const status = document.getElementById('status');
-      const meta = document.getElementById('meta');
-      const warnMixed = document.getElementById('warnMixed');
-      const inpUrl = document.getElementById('inpUrl');
-
-      const btnSave = document.getElementById('btnSave');
-      const btnClear = document.getElementById('btnClear');
-      const btnReload = document.getElementById('btnReload');
-      const btnFullscreen = document.getElementById('btnFullscreen');
-      const btnSnapshot = document.getElementById('btnSnapshot');
-      const btnSetUrl = document.getElementById('btnSetUrl');
-      const stage = document.getElementById('stage');
-
-      let lastLoadTime = 0;
-      let frames = 0;
-      let fpsTimer = null;
-
-      // Hjelpere
-      function getSavedUrl() {
-        return qs.get('url') || localStorage.getItem('raspi_stream_url') || '';
-      }
-      function isHttpsUrl(u) {
-        try { const x = new URL(u); return x.protocol === 'https:'; } catch { return false; }
-      }
-      function normalizeUrl(u) {
-        try {
-          const url = new URL(u);
-          if (location.protocol === 'https:' && url.protocol !== 'https:') url.protocol = 'https:';
-          return url.toString();
-        } catch { return u; }
-      }
-      function addTs(u) {
-        return u + (u.includes('?') ? '&' : '?') + '_ts=' + Date.now();
-      }
-      function setConn(u) {
-        conn.textContent = 'URL: ' + u;
-        conn.href = u;
-      }
-
-      // Prøv automatisk begge kjente stier ved feil
-      let triedVariant = false;
-      function altVariant(u) {
-        try {
-          const url = new URL(u);
-          const hasQuery = url.searchParams.toString().length > 0;
-          const path = url.pathname || '/';
-          // Hvis den har ?action=stream -> prøv /stream.mjpg
-          if (url.searchParams.has('action')) {
-            url.search = '';
-            url.pathname = path.endsWith('/') ? path + 'stream.mjpg' : path + '/stream.mjpg';
-            return url.toString();
-          }
-          // Hvis path (eller root) -> prøv ?action=stream
-          url.searchParams.set('action', 'stream');
-          return url.toString();
-        } catch {
-          // Best effort fallback bare ved string:
-          if (u.includes('action=stream')) return u.replace(/\??action=stream.*$/, 'stream.mjpg');
-          if (u.endsWith('/')) return u + 'stream.mjpg';
-          return u + (u.includes('?') ? '&' : '?') + 'action=stream';
-        }
-      }
-
-      function applyUrl(u) {
-        if (!u) {
-          streamImg.removeAttribute('src');
-          setConn('not set');
-          status.textContent = 'Idle';
-          warnMixed.classList.add('hidden');
-          return;
-        }
-        u = normalizeUrl(u);
-        inpUrl.value = u;
-        setConn(u);
-
-        if (location.protocol === 'https:' && !isHttpsUrl(u)) {
-          warnMixed.classList.remove('hidden');
-        } else {
-          warnMixed.classList.add('hidden');
-        }
-
-        triedVariant = false;   // reset fallback-state
-        frames = 0;
-        lastLoadTime = performance.now();
-        meta.textContent = 'FPS: — • Size: —';
-        status.textContent = 'Connecting…';
-        streamImg.src = addTs(u);
-      }
-
-      function startFpsCounter() {
-        if (fpsTimer) clearInterval(fpsTimer);
-        fpsTimer = setInterval(() => {
-          const now = performance.now();
-          const elapsed = (now - lastLoadTime) / 1000;
-          const fps = elapsed > 0 ? (frames / elapsed) : 0;
-          const size = streamImg.naturalWidth && streamImg.naturalHeight
-            ? (streamImg.naturalWidth + '×' + streamImg.naturalHeight)
-            : '—';
-          meta.textContent = 'FPS: ' + fps.toFixed(1) + ' • Size: ' + size;
-          frames = 0;
-          lastLoadTime = now;
-        }, 1000);
-      }
-
-      // Events
-      streamImg.addEventListener('load', () => {
-        frames++;
-        status.textContent = 'Streaming';
+    // Mobile menu
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', () => {
+      const open = mobileMenu.classList.toggle('open');
+      hamburger.classList.toggle('open', open);
+    });
+    document.querySelectorAll('.mobile-link').forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+        hamburger.classList.remove('open');
       });
+    });
 
-      streamImg.addEventListener('error', () => {
-        // Først fallback til alternativ sti én gang
-        const current = inpUrl.value.trim();
-        if (!triedVariant && current) {
-          triedVariant = true;
-          const alt = altVariant(current);
-          inpUrl.value = alt;
-          localStorage.setItem('raspi_stream_url', alt);
-          setTimeout(() => applyUrl(alt), 300);
-          status.textContent = 'Trying alternate path…';
-          return;
-        }
-        status.textContent = 'Error loading stream. Retrying…';
-        const u = inpUrl.value.trim();
-        if (u) setTimeout(() => applyUrl(u), 1500);
+    // FAQ accordion
+    document.querySelectorAll('.faq__q').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq__item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq__item.open').forEach(el => el.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+        btn.setAttribute('aria-expanded', !isOpen);
       });
+    });
 
-      btnSave.addEventListener('click', () => {
-        let u = inpUrl.value.trim();
-        if (!u) return;
-        u = normalizeUrl(u);
-        localStorage.setItem('raspi_stream_url', u);
-        applyUrl(u);
-      });
-
-      btnClear.addEventListener('click', () => {
-        localStorage.removeItem('raspi_stream_url');
-        inpUrl.value = '';
-        applyUrl('');
-      });
-
-      btnReload.addEventListener('click', () => {
-        const u = getSavedUrl();
-        if (u) applyUrl(u);
-      });
-
-      btnFullscreen.addEventListener('click', async () => {
-        try {
-          if (!document.fullscreenElement) {
-            await stage.requestFullscreen();
-          } else {
-            await document.exitFullscreen();
-          }
-        } catch (e) {}
-      });
-
-      btnSnapshot.addEventListener('click', async () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = streamImg.naturalWidth || 1280;
-          canvas.height = streamImg.naturalHeight || 720;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(streamImg, 0, 0);
-          canvas.toBlob((blob) => {
-            if (!blob) return;
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'snapshot_' + new Date().toISOString().replace(/[:.]/g,'-') + '.png';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-          }, 'image/png');
-        } catch (e) {
-          alert('Snapshot failed. Cross-origin images may block snapshots.');
-        }
-      });
-
-      btnSetUrl.addEventListener('click', () => {
-        setTimeout(() => inpUrl.focus(), 0);
-        inpUrl.select();
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      });
-
-      // Init
-      startFpsCounter();
-      const initial = normalizeUrl(getSavedUrl() || inpUrl.value.trim());
-      if (initial) {
-        inpUrl.value = initial;
-        applyUrl(initial);
-      }
-    })();
+    // Contact form – basic client-side handler
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const navn = this.navn.value.trim();
+      const epost = this.epost.value.trim();
+      if (!navn || !epost) return;
+      const btn = this.querySelector('button[type="submit"]');
+      btn.textContent = 'Melding sendt!';
+      btn.disabled = true;
+      this.reset();
+    });
   </script>
 </body>
 </html>
